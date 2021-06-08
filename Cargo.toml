@@ -3,5 +3,24 @@ name = "tor-zkp"
 version = "0.0.0"
 authors = ["dani <danielorihuelarodriguez@gmail.com>"]
 edition = "2018"
+build = "build.rs"
+links = "zpie"
+
+[lib]
+name = "torzkp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "torzkp"
+path = "src/main.rs"
 
 [dependencies]
+libc = "0.2"
+
+[build-dependencies]
+gcc = "0.3"
+
+[target.x86_64-unknown-linux-gnu.zpie]
+rustc-link-lib = ["zpie"]
+rustc-link-search = ["/home/dani/Desktop/Side-Projects/tor-zkp", "/home/dani/Desktop/Side-Projects/mcl/lib"]
+rustc-flags = "-L/home/dani/Desktop/Side-Projects/tor-zkp -lzpie ../mcl/lib/libmclbn384_256.a ../mcl/lib/libmcl.a -I ../mcl/include -lgmp -lstdc++"
