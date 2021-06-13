@@ -1,6 +1,7 @@
+use std::env;
 use std::io;
 use std::io::Write;
-use std::net::{TcpListener, TcpStream, SocketAddr};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::thread;
 
 use tor_stream::TorStream;
@@ -17,6 +18,68 @@ const EXIT_NODE: i8 = 2;
 const DIRECTORY_AUTHORITY: i8 = 3;
 
 fn main() {
+    let mut automatic = false;
+    let mut selected_option = -1;
+    if let Ok(_) = env::var("EXIT_NODE") {
+        automatic = true;
+        selected_option = EXIT_NODE;
+    }
+    if let Ok(_) = env::var("DIRECTORY_AUTHORITY") {
+        automatic = true;
+        selected_option = DIRECTORY_AUTHORITY;
+    }
+
+    if !automatic {
+        selected_option = select_node_type_cli();
+    }
+
+    match selected_option {
+        CLIENT => {
+            let onion_direction = get_onion_direction_cli();
+            let direction = format!("{}:1234", onion_direction);
+            let stream = TorStream::connect(&direction[..]);
+            if let Err(error) = &stream {
+                println!("Failed to connect: {}", error);
+                std::process::exit(0);
+            }
+            println!("Successfully connected to exit node in port 1234");
+            let stream = stream.unwrap();
+            let proof = ask_exit_node_for_proof(stream);
+            if let Err(_) = proof {
+                println!("Error asking for proof");
+                std::process::exit(0);
+            }
+            println!("Proof received");
+
+            let stream = TcpStream::connect("localhost:1234");
+            if let Err(error) = &stream {
+                println!("Failed to connect: {}", error);
+                std::process::exit(0);
+            }
+            println!("Successfully connected to directory authority in port 1234");
+            let stream = stream.unwrap();
+            match ask_directory_authority_to_verify_proof(stream, &proof.unwrap()) {
+                Ok(result) => {
+                    println!("Proof verification worked = {}", result);
+                }
+                Err(_) => {
+                    println!("Error while verifying proof");
+                }
+            }
+        }
+        EXIT_NODE => {
+            init_exit_node();
+            start_server(1234);
+        }
+        DIRECTORY_AUTHORITY => {
+            init_directory_authority();
+            start_server(1234);
+        }
+        _ => (),
+    }
+}
+
+fn select_node_type_cli() -> i8 {
     let mut input = String::new();
 
     loop {
@@ -35,7 +98,7 @@ fn main() {
 
         match selected_option {
             Ok(value) if MIN_OPTION <= value && value <= MAX_OPTION => {
-                break;
+                return input.trim().parse::<i8>().unwrap();
             }
             Ok(_) => {
                 println!("Invalid option");
@@ -48,54 +111,7 @@ fn main() {
             }
         }
     }
-
-    let selected_option = input.trim().parse::<i8>().unwrap();
-    match selected_option {
-        CLIENT => {
-            let onion_direction = get_onion_direction_cli();
-            let direction = format!("{}:1234", onion_direction);
-            let stream = TorStream::connect(&direction[..]);
-            if let Err(error) = &stream {
-                println!("Failed to connect: {}", error);
-                std::process::exit(0);
-            }
-            println!("Successfully connected to exit node in port 9050");
-            let stream = stream.unwrap();
-            let proof = ask_exit_node_for_proof(stream);
-            if let Err(_) = proof {
-                println!("Error asking for proof");
-                std::process::exit(0);
-            }
-            println!("Proof received");
-
-            let stream = TcpStream::connect("localhost:9051");
-            if let Err(error) = &stream {
-                println!("Failed to connect: {}", error);
-                std::process::exit(0);
-            }
-            println!("Successfully connected to directory authority in port 9050");
-            let stream = stream.unwrap();
-            match ask_directory_authority_to_verify_proof(stream, &proof.unwrap()) {
-                Ok(result) => {
-                    println!("Proof verification worked = {}", result);
-                }
-                Err(_) => {
-                    println!("Error while verifying proof");
-                }
-            }
-        }
-        EXIT_NODE => {
-            init_exit_node();
-            start_server(9050);
-        }
-        DIRECTORY_AUTHORITY => {
-            init_directory_authority();
-            start_server(9051);
-        }
-        _ => (),
-    }
 }
-
 
 fn get_onion_direction_cli() -> String {
     let mut onion_direction = String::new();
@@ -113,7 +129,7 @@ fn get_onion_direction_cli() -> String {
 fn start_server(port: u16) {
     let address = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = TcpListener::bind(address).unwrap();
-    println!("Server listening on port 9050");
+    println!("Server listening on port {}", port);
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
