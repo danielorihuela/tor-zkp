@@ -127,7 +127,7 @@ fn get_onion_direction_cli() -> String {
 }
 
 fn start_server(port: u16) {
-    let address = SocketAddr::from(([127, 0, 0, 1], port));
+    let address = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = TcpListener::bind(address).unwrap();
     println!("Server listening on port {}", port);
     for stream in listener.incoming() {
