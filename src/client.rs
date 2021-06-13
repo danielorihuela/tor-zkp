@@ -4,7 +4,9 @@ use std::error::Error;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
-pub fn ask_exit_node_for_proof(mut stream: TcpStream) -> Result<String, Box<dyn Error>> {
+use tor_stream::TorStream;
+
+pub fn ask_exit_node_for_proof(mut stream: TorStream) -> Result<String, Box<dyn Error>> {
     let message = encode_message(&MessageType::NeedProof, "");
     stream.write_all(message.as_bytes()).unwrap();
 

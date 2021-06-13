@@ -3,6 +3,7 @@ use std::io::Write;
 use std::net::{TcpListener, TcpStream, SocketAddr};
 use std::thread;
 
+use tor_stream::TorStream;
 use torzkp::{
     ask_directory_authority_to_verify_proof, ask_exit_node_for_proof, handle_client,
     init_directory_authority, init_exit_node,
@@ -51,7 +52,9 @@ fn main() {
     let selected_option = input.trim().parse::<i8>().unwrap();
     match selected_option {
         CLIENT => {
-            let stream = TcpStream::connect("localhost:9050");
+            let onion_direction = get_onion_direction_cli();
+            let direction = format!("{}:1234", onion_direction);
+            let stream = TorStream::connect(&direction[..]);
             if let Err(error) = &stream {
                 println!("Failed to connect: {}", error);
                 std::process::exit(0);
@@ -91,6 +94,20 @@ fn main() {
         }
         _ => (),
     }
+}
+
+
+fn get_onion_direction_cli() -> String {
+    let mut onion_direction = String::new();
+    println!("Introduce the onion direction you want to connect to");
+    print!("> ");
+    let _ = io::stdout().flush();
+
+    io::stdin()
+        .read_line(&mut onion_direction)
+        .expect("Could not read the input");
+
+    String::from(onion_direction.trim())
 }
 
 fn start_server(port: u16) {
