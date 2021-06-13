@@ -6,23 +6,23 @@ use std::thread;
 
 use tor_stream::TorStream;
 use torzkp::{
-    ask_directory_authority_to_verify_proof, ask_exit_node_for_proof, handle_client,
-    init_directory_authority, init_exit_node,
+    ask_directory_authority_to_verify_proof, ask_onion_service_for_proof, handle_client,
+    init_directory_authority, init_onion_service,
 };
 
 const MIN_OPTION: i8 = 1;
 const MAX_OPTION: i8 = 3;
 
 const CLIENT: i8 = 1;
-const EXIT_NODE: i8 = 2;
+const ONION_SERVICE: i8 = 2;
 const DIRECTORY_AUTHORITY: i8 = 3;
 
 fn main() {
     let mut automatic = false;
     let mut selected_option = -1;
-    if let Ok(_) = env::var("EXIT_NODE") {
+    if let Ok(_) = env::var("ONION_SERVICE") {
         automatic = true;
-        selected_option = EXIT_NODE;
+        selected_option = ONION_SERVICE;
     }
     if let Ok(_) = env::var("DIRECTORY_AUTHORITY") {
         automatic = true;
@@ -42,9 +42,9 @@ fn main() {
                 println!("Failed to connect: {}", error);
                 std::process::exit(0);
             }
-            println!("Successfully connected to exit node in port 1234");
+            println!("Successfully connected to onion service in port 1234");
             let stream = stream.unwrap();
-            let proof = ask_exit_node_for_proof(stream);
+            let proof = ask_onion_service_for_proof(stream);
             if let Err(_) = proof {
                 println!("Error asking for proof");
                 std::process::exit(0);
@@ -67,8 +67,8 @@ fn main() {
                 }
             }
         }
-        EXIT_NODE => {
-            init_exit_node();
+        ONION_SERVICE => {
+            init_onion_service();
             start_server(1234);
         }
         DIRECTORY_AUTHORITY => {
@@ -85,7 +85,7 @@ fn select_node_type_cli() -> i8 {
     loop {
         println!("What kind of node are you ?");
         println!("  1. Client");
-        println!("  2. Exit node");
+        println!("  2. Onion Service");
         println!("  3. Directory Authority");
         print!("> ");
         let _ = io::stdout().flush();

@@ -11,7 +11,7 @@ pub fn init_directory_authority() {
     };
 }
 
-pub fn init_exit_node() {
+pub fn init_onion_service() {
     unsafe {
         init_prover();
     };
@@ -54,7 +54,7 @@ fn handle_request(request: &[u8]) -> Option<String> {
     let (message_type, data) = decode_message(&decoded_request);
 
     match message_type {
-        // Message for exit node
+        // Message for onion service
         Some(MessageType::NeedProof) => {
             println!("Client needs a proof. Creating proof...");
             unsafe {
