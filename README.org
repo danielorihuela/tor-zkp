@@ -1,8 +1,10 @@
 * Tor ZKP
 
+This repository contains some experiments and the memory realized for my final master's thesis on the viability of using Zero-Knowledge proofs to improve Tor's reputation system. Folder =memory= contains the final report.
+
 ** Demonstration flow
 
-Demonstration flow of ZKP in Tor. The code works on Linux, but We have not tried this code in Windows or Mac.
+The =flow-example= folder contains a demonstration flow of ZKP in Tor. The code works on Linux, but We have not tried this code in Windows or Mac.
 
 *** Requisites
 
@@ -14,7 +16,7 @@ Demonstration flow of ZKP in Tor. The code works on Linux, but We have not tried
 
 *** Setup
 
-To execute the flow we need to compile the rust program and build the docker images from the root directory of this repository.
+To execute the flow we need to compile the rust program and build the docker images from the =flow-example= directory.
 
 #+begin_src sh
 docker-compose build
@@ -23,7 +25,7 @@ cargo build --release
 
 *** Execute flow
 
-From the root directory of this repository.
+From the =flow-example= directory.
 
 1. Start the docker machines.
 
@@ -62,7 +64,7 @@ At that point, the flow will start executing and you should see output from the 
 
 ** Circuit demonstration
 
-The circom folder contains the circuit created with the [[https://docs.circom.io/][circom programming language]] and the scripts to compile the circuit, setup the environment, generate proovs and verify them.
+The =circuit-example= folder contains the circuit created with the [[https://docs.circom.io/][circom programming language]] and the scripts to compile the circuit, setup the environment, generate proovs and verify them.
 
 *** Requisites
 
@@ -76,20 +78,20 @@ The circom folder contains the circuit created with the [[https://docs.circom.io
 
 We can execute each step separately or execute all the phases at once:
 
-#+begin_src: sh
-cd circom
+#+begin_src sh
+cd circuit-example 
 ./compile.sh && ./setup.sh && ./calculate_correct_witness.sh && ./generate_proof.sh && ./verify_proof.sh
 #+end_src
 
 To verify an invalid proof we can run:
 
-#+begin_src: sh
+#+begin_src sh
 ./calculate_incorrect_witness.sh && ./generate_proof.sh && ./verify_proof.sh
 #+end_src
 
 We can clean the created files.
 
-#+begin_src: sh
+#+begin_src sh
 ./clean.sh
 #+end_src
 
